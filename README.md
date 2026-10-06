@@ -1,4 +1,4 @@
-Dataset App
+**Dataset App**
 
 A Final Year Design Project developed as a dataset-focused application.
 This repository contains the complete source code for the web application and its Android/Capacitor project.
