@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Daily Check-in</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2 style="text-align: center;">STUDENT DAILY CHECK-IN</h2>
+
+        <form id="checkinForm">
+            <!-- Ei duto ghor shudhu prothom bar dekhabe -->
+            <div class="input-group" id="studentIdDiv">
+                <label>Student ID:</label>
+                <input type="text" id="studentId" placeholder="Enter ID" required>
+            </div>
+
+            <div class="input-group" id="prevGpaDiv">
+                <label>Previous Semester GPA:</label>
+                <input type="number" step="0.01" min="0" max="4" id="previousGpa" placeholder="Enter GPA (0.00 - 4.00)" required>
+            </div>
+            <!-- Ekhan theke nicher gulo protidin puron korbe -->
+
+            <div class="input-group">
+                <label>Date (Manually Selectable):</label>
+                <input type="date" id="date" required>
+            </div>
+
+            <!-- NEW: Study Effectiveness -->
+            <div class="input-group">
+                <label>Study Effectiveness (Today):</label>
+                <select id="studyEffectiveness" required>
+                    <option value="" disabled selected>Rate today's study (1 - 10)</option>
+                    <option value="1">1 - Very Poor</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5 - Average</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10 - Excellent</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Sleep Hours:</label>
+                <input type="number" step="0.5" min="0" max="24" id="sleepHours" placeholder="Hours" required>
+            </div>
+
+            <!-- NEW: Unnecessary Phone Use -->
+            <div class="input-group">
+                <label>Unnecessary Phone Use (Hours):</label>
+                <input type="number" step="0.5" min="0" max="24" id="unnecessaryPhoneUse" placeholder="Time wasted on phone (Hours)" required>
+            </div>
+
+            <div class="input-group">
+                <label>Refresh Time (Hours):</label>
+                <input type="number" step="0.5" min="0" max="24" id="refreshTime" placeholder="Hours" required>
+            </div>
+
+            <div class="input-group">
+                <label>Class Participation:</label>
+                <select id="classParticipation">
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Family Issue:</label>
+                <select id="familyIssue">
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                </select>
+            </div>
+
+            <!-- NEW: Mood -->
+            <div class="input-group">
+                <label>Mood (Today):</label>
+                <select id="mood" required>
+                    <option value="" disabled selected>Select your mood</option>
+                    <option value="Happy">Happy</option>
+                    <option value="Motivated">Motivated</option>
+                    <option value="Calm">Calm</option>
+                    <option value="Neutral">Neutral</option>
+                    <option value="Tired">Tired</option>
+                    <option value="Anxious">Anxious</option>
+                    <option value="Sad">Sad</option>
+                    <option value="Frustrated">Frustrated</option>
+                </select>
+            </div>
+
+            <!-- NEW: Stress Level -->
+            <div class="input-group">
+                <label>Stress Level:</label>
+                <select id="stressLevel" required>
+                    <option value="" disabled selected>Select stress level</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Daily Text:</label>
+                <textarea id="dailyText" rows="4" placeholder="Please tell me something about your studies today." required></textarea>
+            </div>
+
+            <button type="submit" id="submitBtn" class="submit-btn">SUBMIT</button>
+        </form>
+    </div>
+
+    <!-- Firebase SDK Setup -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+        // Apnar Database Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCfG94M9y0iHfZiBlW9ThT3ytlcBQ4nvKs",
+            authDomain: "dataset-f125d.firebaseapp.com",
+            projectId: "dataset-f125d",
+            messagingSenderId: "907924712516",
+            appId: "1:907924712516:web:b6a4fcbc8eb9420142e011"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // ==========================================
+        // 0. DEFAULT DATE = AJKER DATE (change kora jabe)
+        // ==========================================
+        const dateInput = document.getElementById('date');
+        const now = new Date();
+        const localToday = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+            .toISOString().split('T')[0];
+        dateInput.value = localToday;
+
+        // ==========================================
+        // 1. LOCAL STORAGE: ID & GPA Mone Rakha
+        // ==========================================
+        let savedId = null;
+        let savedGpa = null;
+        try {
+            savedId = localStorage.getItem('savedStudentId');
+            savedGpa = localStorage.getItem('savedGpa');
+        } catch (e) { /* storage blocked hole ignore */ }
+
+        if (savedId && savedGpa) {
+            // Background e value boshiye dilam
+            document.getElementById('studentId').value = savedId;
+            document.getElementById('previousGpa').value = savedGpa;
+
+            // Student er theke form ti hide kore dilam jeno bar bar type na korte hoy
+            document.getElementById('studentIdDiv').style.display = 'none';
+            document.getElementById('prevGpaDiv').style.display = 'none';
+        }
+
+        // ==========================================
+        // 2. TYPING TRACKER
+        // ==========================================
+        const typing = {
+            first: null,        // prothom input er time
+            last: null,         // shesh input er time
+            typedChars: 0,      // nijer hate type kora character (paste bade)
+            backspaces: 0,
+            otherDeletes: 0,    // Delete key, Ctrl+Backspace (word delete) etc.
+            pastes: 0,
+            pauses: 0,          // 2 sec er beshi thamle 1 pause
+            gapSum: 0,          // pause bade key-to-key gap er jog
+            gapCount: 0
+        };
+        const PAUSE_MS = 2000;
+
+        document.getElementById('dailyText').addEventListener('input', function (e) {
+            const t = performance.now();
+            const type = e.inputType || '';
+
+            if (typing.first === null) typing.first = t;
+            if (typing.last !== null) {
+                const gap = t - typing.last;
+                if (gap > PAUSE_MS) typing.pauses++;
+                else { typing.gapSum += gap; typing.gapCount++; }
+            }
+            typing.last = t;
+
+            if (type === 'deleteContentBackward') typing.backspaces++;
+            else if (type.startsWith('delete')) typing.otherDeletes++;
+            else if (type === 'insertFromPaste' || type === 'insertFromDrop') typing.pastes++;
+            else if (type === 'insertCompositionText') typing.typedChars += 1;   // mobile / Bangla IME
+            else if (type.startsWith('insert')) typing.typedChars += (e.data ? e.data.length : 1);
+        });
+
+        function getTypingStats() {
+            let durationSec = 0, wpm = 0, netWpm = 0, avgIntervalMs = 0, totalTimeSec = 0;
+
+            if (typing.first !== null && typing.last !== null) {
+                durationSec = (typing.last - typing.first) / 1000;
+                totalTimeSec = (performance.now() - typing.first) / 1000;
+                if (durationSec > 0) {
+                    const minutes = durationSec / 60;
+                    wpm = (typing.typedChars / 5) / minutes;
+                    netWpm = (Math.max(0, typing.typedChars - typing.backspaces) / 5) / minutes;
+                }
+            }
+            if (typing.gapCount > 0) avgIntervalMs = typing.gapSum / typing.gapCount;
+
+            return {
+                Typing_Speed_WPM: Math.round(wpm),
+                Net_Typing_Speed_WPM: Math.round(netWpm),
+                Typing_Duration_Sec: Number(durationSec.toFixed(1)),
+                Time_To_Submit_Sec: Number(totalTimeSec.toFixed(1)),
+                Backspace_Count: typing.backspaces,
+                Delete_Count: typing.otherDeletes,
+                Paste_Count: typing.pastes,
+                Pause_Count: typing.pauses,
+                Avg_Key_Interval_Ms: Math.round(avgIntervalMs),
+                Text_Length: document.getElementById('dailyText').value.length
+            };
+        }
+
+        // ==========================================
+        // 3. SUBMIT TO FIREBASE
+        // ==========================================
+        document.getElementById('checkinForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+
+            let phoneUsage = 0;
+            if(document.getElementById('phoneUsage')) {
+                phoneUsage = Number(document.getElementById('phoneUsage').value);
+            }
+            
+            const unnecessaryPhoneUse = Number(document.getElementById('unnecessaryPhoneUse').value);
+            if (document.getElementById('phoneUsage') && unnecessaryPhoneUse > phoneUsage) {
+                alert("Unnecessary phone use cannot be more than total phone usage.");
+                return;
+            }
+
+            submitBtn.innerText = "Saving Data...";
+            submitBtn.disabled = true;
+
+            let studentId = document.getElementById('studentId').value.trim();
+            let previousGpa = document.getElementById('previousGpa').value;
+
+            // Jodi prothom bar hoy ba age save na thake, tahole local storage e save kora
+            if (studentId && previousGpa) {
+                try {
+                    localStorage.setItem('savedStudentId', studentId);
+                    localStorage.setItem('savedGpa', previousGpa);
+                } catch (e) { /* ignore */ }
+            }
+
+            const typingStats = getTypingStats();
+
+            try {
+                // Database e pathanor jonne form-er shob data eksathe kora
+                const docData = {
+                    Student_ID: studentId,
+                    Date: document.getElementById('date').value,
+                    Study_Hours: document.getElementById('studyHours') ? Number(document.getElementById('studyHours').value) : 0,
+                    Study_Effectiveness: Number(document.getElementById('studyEffectiveness').value), // NEW (1-10)
+                    Sleep_Hours: Number(document.getElementById('sleepHours').value),
+                    Phone_Usage_Hours: phoneUsage,
+                    Unnecessary_Phone_Use_Hours: unnecessaryPhoneUse,                                // NEW
+                    Refresh_Time_Hours: Number(document.getElementById('refreshTime').value),
+                    Class_Participation: document.getElementById('classParticipation').value,
+                    Family_Issue: document.getElementById('familyIssue').value,
+                    Mood: document.getElementById('mood').value,                                      // NEW
+                    Stress_Level: document.getElementById('stressLevel').value,                       // NEW
+                    Previous_GPA: Number(previousGpa),
+                    Text: document.getElementById('dailyText').value,
+                    ...typingStats, // Typing_Speed_WPM, Net_Typing_Speed_WPM, Backspace_Count, Pause_Count etc.
+                    Timestamp: serverTimestamp()
+                };
+
+                // Firebase e 'daily_checkins' namer folder e save kora
+                await addDoc(collection(db, "daily_checkins"), docData);
+
+                alert("Successfully saved to Database!");
+                location.reload();
+
+            } catch (error) {
+                console.error("Error writing document: ", error);
+                alert("Error saving data!");
+                submitBtn.innerText = "SUBMIT";
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

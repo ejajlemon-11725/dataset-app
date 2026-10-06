@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Student Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #e9ecef; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-box { background: #007bff; color: white; padding: 20px; border-radius: 8px; text-align: center; font-size: 18px; }
+        .stat-box span { display: block; font-size: 28px; font-weight: bold; margin-top: 5px; }
+        .download-btn { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 18px; font-weight: bold; }
+        .download-btn:hover { background: #218838; }
+        .download-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .log-area { margin-top: 20px; font-size: 14px; color: #555; background: #f8f9fa; padding: 10px; border-radius: 4px; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Admin Dashboard (Dataset)</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-box">Total Records <span id="totalRecords">Loading...</span></div>
+            <div class="stat-box">Total Unique Students <span id="totalStudents">Loading...</span></div>
+            <div class="stat-box">Completed Today <span id="completedToday">Loading...</span></div>
+            <div class="stat-box">Missing Today (out of 50) <span id="missingToday">Loading...</span></div>
+        </div>
+
+        <button id="downloadBtn" class="download-btn" disabled>Loading Data...</button>
+
+        <div class="log-area" id="logArea">
+            <p>Connecting to database...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+        // Apnar Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCfG94M9y0iHfZiBlW9ThT3ytlcBQ4nvKs",
+            authDomain: "dataset-f125d.firebaseapp.com",
+            projectId: "dataset-f125d",
+            messagingSenderId: "907924712516",
+            appId: "1:907924712516:web:b6a4fcbc8eb9420142e011"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let allRecords = [];
+
+        function logMessage(msg) {
+            const logArea = document.getElementById('logArea');
+            logArea.innerHTML += `<p>> ${msg}</p>`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        async function fetchData() {
+            try {
+                logMessage("Fetching data from Firestore...");
+                const querySnapshot = await getDocs(collection(db, "daily_checkins"));
+                
+                let uniqueStudents = new Set();
+                let todayCount = 0;
+                
+                // Ajker date ber kora (YYYY-MM-DD format e)
+                const today = new Date();
+                const todayString = today.toISOString().split('T')[0];
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    allRecords.push(data);
+                    
+                    if(data.Student_ID) uniqueStudents.add(data.Student_ID);
+                    if(data.Date === todayString) todayCount++;
+                });
+
+                // Dashboard update kora
+                document.getElementById('totalRecords').innerText = allRecords.length;
+                document.getElementById('totalStudents').innerText = uniqueStudents.size;
+                document.getElementById('completedToday').innerText = todayCount;
+                document.getElementById('missingToday').innerText = Math.max(0, 50 - todayCount);
+
+                logMessage(`Successfully loaded ${allRecords.length} records.`);
+                
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.innerText = "📥 Download CSV Dataset";
+                downloadBtn.disabled = false;
+
+            } catch (error) {
+                logMessage("Error: " + error.message);
+                console.error(error);
+            }
+        }
+
+        function convertToCSV(objArray) {
+            if (objArray.length === 0) return '';
+            
+            // CSV er Header toiri kora - Ekhane 'Voice_Data_Base64' remove kora hoyeche
+            const headers = [
+                "Student_ID", "Date", "Study_Hours", "Sleep_Hours", 
+                "Phone_Usage_Hours", "Refresh_Time_Hours", "Class_Participation", 
+                "Family_Issue", "Previous_GPA", "Text", "Typing_Speed_WPM", 
+                "Backspace_Count", "Typing_Duration_Sec"
+            ];
+            
+            let str = headers.join(',') + '\r\n';
+
+            // Protiti row er data add kora
+            for (let i = 0; i < objArray.length; i++) {
+                let line = '';
+                for (let index in headers) {
+                    if (line != '') line += ',';
+                    
+                    let cellValue = objArray[i][headers[index]] || '';
+                    
+                    // Text er bhitor comma ba enter thakle jate CSV venge na jay tai double quote add kora
+                    cellValue = cellValue.toString().replace(/"/g, '""');
+                    line += `"${cellValue}"`;
+                }
+                str += line + '\r\n';
+            }
+            return str;
+        }
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            logMessage("Generating CSV file...");
+            const csvData = convertToCSV(allRecords);
+            
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "student_dataset.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            logMessage("CSV Downloaded Successfully!");
+        });
+
+        // Page load holei data fetch hobe
+        window.onload = fetchData;
+
+    </script>
+</body>
+</html>
