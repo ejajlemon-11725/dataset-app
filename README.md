@@ -201,7 +201,7 @@ flowchart TD
 | **Project Type** | Final Year Design Project |
 | **Project Name** | Dataset App |
 | **Developer** | Ejaj Ahmmod Lemon |
-| **Group** | Group 3 |
+| **Group** | Group 8 |
 | **Supervisor** | Tanjina Helaly |
 | **Co-Supervisor** | Tasnim Jahin Mawla |
 | **Repository** | `dataset-app` |
@@ -212,7 +212,7 @@ This project is developed for **academic and educational purposes**.
 
 ## 👥 Team
 
-**Group 3**
+**Group 8**
 
 | # | Name | Reg ID |
 |:-:|---|:-:|
