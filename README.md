@@ -27,7 +27,7 @@
 - [Development Workflow](#-development-workflow)
 - [Future Improvements](#-future-improvements)
 - [Academic Project](#-academic-project)
-- [Author](#-author)
+- [Team](#-team)
 
 ---
 
@@ -200,16 +200,32 @@ flowchart TD
 |---|---|
 | **Project Type** | Final Year Design Project |
 | **Project Name** | Dataset App |
-| **Developer** | Ejaj Ahmed Lemon |
+| **Developer** | Ejaj Ahmmod Lemon |
+| **Group** | Group 3 |
+| **Supervisor** | Tanjina Helaly |
+| **Co-Supervisor** | Tasnim Jahin Mawla |
 | **Repository** | `dataset-app` |
 
 This project is developed for **academic and educational purposes**.
 
 ---
 
-## 👨‍💻 Author
+## 👥 Team
 
-**Ejaj Ahmed Lemon**
+**Group 3**
+
+| # | Name | Reg ID |
+|:-:|---|:-:|
+| 1 | Tashnimul Hasan Shifat | 23101142 |
+| 2 | Ejaj Ahmmod Lemon | 23101160 |
+| 3 | Sadia Shahrin Sharna | 23101161 |
+
+**Supervision**
+
+| Role | Name |
+|---|---|
+| Supervisor | Tanjina Helaly |
+| Co-Supervisor | Tasnim Jahin Mawla |
 
 [![GitHub](https://img.shields.io/badge/GitHub-ejajlemon--11725-181717?style=for-the-badge&logo=github)](https://github.com/ejajlemon-11725)
 
